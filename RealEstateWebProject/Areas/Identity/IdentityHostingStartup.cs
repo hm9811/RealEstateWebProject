@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
@@ -16,16 +16,11 @@ namespace RealEstateWebProject.Areas.Identity
         public void Configure(IWebHostBuilder builder)
         {
             builder.ConfigureServices((context, services) => {
-                services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(
-                        context.Configuration.GetConnectionString("ApplicationDbContextConnection")));
-
-                services.AddDefaultIdentity<IdentityUser>(IdentityHelper.SetIdentityOptions)
-                    .AddRoles<IdentityRole>()
-                    .AddEntityFrameworkStores<ApplicationDbContext>();
+               
 
                 
             });
         }
     }
 }
+*/

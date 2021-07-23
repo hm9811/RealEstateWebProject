@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using RealEstateWebProject.Models;
 
 namespace RealEstateWebProject.Data
 {
@@ -22,5 +23,7 @@ namespace RealEstateWebProject.Data
             // For example, you can rename the ASP.NET Identity table names and more.
             // Add your customizations after calling base.OnModelCreating(builder);
         }
+
+        public DbSet<RealEstateWebProject.Models.AgentModel> AgentModel { get; set; }
     }
 }
