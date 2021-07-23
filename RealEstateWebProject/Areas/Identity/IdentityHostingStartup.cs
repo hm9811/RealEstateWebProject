@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RealEstateWebProject.Data;
+using RealEstateWebProject.Models;
 
 [assembly: HostingStartup(typeof(RealEstateWebProject.Areas.Identity.IdentityHostingStartup))]
 namespace RealEstateWebProject.Areas.Identity
@@ -19,8 +20,11 @@ namespace RealEstateWebProject.Areas.Identity
                     options.UseSqlServer(
                         context.Configuration.GetConnectionString("ApplicationDbContextConnection")));
 
-                services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                services.AddDefaultIdentity<IdentityUser>(IdentityHelper.SetIdentityOptions)
+                    .AddRoles<IdentityRole>()
                     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+                
             });
         }
     }
