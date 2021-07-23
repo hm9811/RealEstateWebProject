@@ -61,7 +61,7 @@ namespace RealEstateWebProject
             IServiceScope serviceProvider = app.ApplicationServices
                                     .GetRequiredService<IServiceProvider>()
                                     .CreateScope();
-            IdentityHelper.CreateRoles(serviceProvider.ServiceProvider, IdentityHelper.Admin, IdentityHelper.Customer, IdentityHelper.Seller).Wait();
+            IdentityHelper.CreateRoles(serviceProvider.ServiceProvider, IdentityHelper.Admin, IdentityHelper.Customer, IdentityHelper.Seller, IdentityHelper.Agent).Wait();
 
             IdentityHelper.CreateDefaultAdmin(serviceProvider.ServiceProvider).Wait();
         }
