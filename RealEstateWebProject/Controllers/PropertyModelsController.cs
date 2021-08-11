@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RealEstateWebProject.Data;
 using System;
 using System.Collections.Generic;
@@ -15,9 +17,23 @@ namespace RealEstateWebProject.Controllers
         {
             _context = context;
         }
-        public IActionResult Index()
+        // GET: PropertyModels
+        public async Task<IActionResult> Index(string searchString)
         {
-            return View();
+            ViewData["CurrentFilter"] = searchString;
+            var props = from c in _context.PropertyModel select c;
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                props = props.Where(x => x.name.Contains(searchString) || x.address.Contains(searchString));
+                ViewBag.visible = true;
+            }
+            else
+            {
+                ViewBag.visible = false;
+            }
+            return View(await props.AsNoTracking().ToListAsync());
         }
     }
+
+
 }
