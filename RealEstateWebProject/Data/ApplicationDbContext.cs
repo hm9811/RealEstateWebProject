@@ -26,5 +26,6 @@ namespace RealEstateWebProject.Data
 
         public DbSet<RealEstateWebProject.Models.AgentModel> AgentModel { get; set; }
         public DbSet<RealEstateWebProject.Models.PropertyModel> PropertyModel { get; set; }
+        public DbSet<RealEstateWebProject.Models.RentPropertyModel> RentPropertyModel { get; set; }
     }
 }
