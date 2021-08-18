@@ -7,6 +7,7 @@ using RealEstateWebProject.Models;
 using RealEstateWebProject.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -39,6 +40,56 @@ namespace RealEstateWebProject.Controllers
                 ViewBag.empty = true;
             }
             return View(models);
+        }
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var rentPropertyModel = await _context.RentPropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (rentPropertyModel == null)
+            {
+                return NotFound();
+            }
+            ViewBag.path = rentPropertyModel.image;
+            ViewBag.id = rentPropertyModel.id;
+            ViewBag.isSold = false;
+            var comments = _context.CommentModel.Where(x => x.propname == rentPropertyModel.name).ToList();
+            var bids = _context.BidModel.Where(x => x.propname == rentPropertyModel.name).ToList();
+            var p = _context.PropertyModel.FirstOrDefault(x => x.name == rentPropertyModel.name);
+            if (comments.Count > 0)
+            {
+                ViewBag.show = true;
+            }
+            else
+            {
+                ViewBag.show = false;
+            }
+            if (bids.Count > 0)
+            {
+                ViewBag.hasBids = true;
+            }
+            else
+            {
+                ViewBag.hasBids = false;
+            }
+            dynamic model = new ExpandoObject();
+            model.property = rentPropertyModel;
+            model.comments = comments;
+            if (p.propertyDetail == PropertyDetail.Unsold)
+            {
+                model.bids = bids;
+            }
+            else
+            {
+                ViewBag.isSold = true;
+                var winner = _context.AuctionModel.FirstOrDefault(x => x.propname == rentPropertyModel.name);
+                ViewBag.winner = winner.custname;
+            }
+            return View(model);
         }
         public IActionResult Create()
         {
@@ -176,6 +227,89 @@ namespace RealEstateWebProject.Controllers
         {
             return _context.RentPropertyModel.Any(e => e.id == id);
         }
+        public async Task<IActionResult> Comments(int id, string comment)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.GetUserAsync(HttpContext.User);
+                string name = await _userManager.GetUserNameAsync(user);
+                var p = _context.RentPropertyModel.FirstOrDefault(x => x.id == id);
+                CommentModel commentModel = new CommentModel
+                {
+                    comment = comment,
+                    name = name,
+                    propname = p.name
+                };
+                _context.CommentModel.Add(commentModel);
+            }
+            await _context.SaveChangesAsync();
+            return Redirect("Details/" + id.ToString());
+        }
+        public async Task<IActionResult> Bid(int id, int bidId)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.GetUserAsync(HttpContext.User);
+                string name = await _userManager.GetUserNameAsync(user);
+                var p = _context.RentPropertyModel.FirstOrDefault(x => x.id == id);
+                var property = _context.PropertyModel.FirstOrDefault(x => x.name == p.name);
+                var bid = _context.BidModel.FirstOrDefault(x => x.id == bidId);
+                property.propertyDetail = PropertyDetail.Sold;
+                _context.Update(property);
+                AuctionModel a = new AuctionModel
+                {
+                    custname = bid.customername,
+                    propname = p.name,
+                    bid = bidId
+                };
+                _context.AuctionModel.Add(a);
+            }
+            await _context.SaveChangesAsync();
+            return Redirect("Details/" + id.ToString());
+        }
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
 
+            var rentPropertyModel = await _context.RentPropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (rentPropertyModel == null)
+            {
+                return NotFound();
+            }
+
+            return View(rentPropertyModel);
+        }
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var rentPropertyModel = await _context.RentPropertyModel.FindAsync(id);
+            string file = rentPropertyModel.image;
+            string uploadFolder = Path.Combine(_hostingEnvironment.WebRootPath, "Photos");
+            string fileToDelete = Path.Combine(uploadFolder, file);
+            /*if (System.IO.File.Exists(fileToDelete))
+            {
+                System.IO.File.Delete(fileToDelete);
+            }*/
+            _context.RentPropertyModel.Remove(rentPropertyModel);
+            var comments = _context.CommentModel.Where(x => x.propname == rentPropertyModel.name).ToList();
+            foreach (var comment in comments)
+            {
+                _context.CommentModel.Remove(comment);
+            }
+            var bids = _context.BidModel.Where(x => x.propname == rentPropertyModel.name).ToList();
+            foreach (var bid in bids)
+            {
+                _context.BidModel.Remove(bid);
+            }
+            var p = _context.PropertyModel.FirstOrDefault(x => x.name == rentPropertyModel.name);
+            _context.PropertyModel.Remove(p);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
