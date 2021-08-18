@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RealEstateWebProject.Data;
+using RealEstateWebProject.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +33,62 @@ namespace RealEstateWebProject.Controllers
                 ViewBag.visible = false;
             }
             return View(await props.AsNoTracking().ToListAsync());
+        }
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var propertyModel = await _context.PropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (propertyModel == null)
+            {
+                return NotFound();
+            }
+
+            return View(propertyModel);
+        }
+        public async Task<IActionResult> Verify(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var propertyModel = await _context.PropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (propertyModel == null)
+            {
+                return NotFound();
+            }
+            propertyModel.propertyStatus = PropertyStatus.Verified;
+            _context.Update(propertyModel);
+            _context.SaveChanges();
+            return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> Unfit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var propertyModel = await _context.PropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (propertyModel == null)
+            {
+                return NotFound();
+            }
+            propertyModel.propertyStatus = PropertyStatus.Unfit;
+            _context.Update(propertyModel);
+            _context.SaveChanges();
+            return RedirectToAction(nameof(Index));
+        }
+        private bool PropertyModelExists(int id)
+        {
+            return _context.PropertyModel.Any(e => e.id == id);
         }
     }
 
