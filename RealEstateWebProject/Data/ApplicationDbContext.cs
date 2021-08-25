@@ -30,5 +30,6 @@ namespace RealEstateWebProject.Data
         public DbSet<RealEstateWebProject.Models.CommentModel> CommentModel { get; set; }
         public DbSet<RealEstateWebProject.Models.BidModel> BidModel { get; set; }
         public DbSet<RealEstateWebProject.Models.AuctionModel> AuctionModel { get; set; }
+        public DbSet<RealEstateWebProject.Models.SellPropertyModel> SellPropertyModel { get; set; }
     }
 }
