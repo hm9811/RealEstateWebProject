@@ -4,8 +4,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RealEstateWebProject.Data;
+using RealEstateWebProject.Models;
+using RealEstateWebProject.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -41,13 +45,59 @@ namespace RealEstateWebProject.Controllers
         }
 
         // GET: SellPropertyModelController/Details/5
-        public ActionResult Details(int id)
+        public async Task<IActionResult> Details(int? id)
         {
-            return View();
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var sellPropertyModel = await _context.SellPropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (sellPropertyModel == null)
+            {
+                return NotFound();
+            }
+            ViewBag.path = sellPropertyModel.image;
+            ViewBag.id = sellPropertyModel.id;
+            ViewBag.isSold = false;
+            var comments = _context.CommentModel.Where(x => x.propname == sellPropertyModel.name).ToList();
+            var bids = _context.BidModel.Where(x => x.propname == sellPropertyModel.name).ToList();
+            var p = _context.PropertyModel.FirstOrDefault(x => x.name == sellPropertyModel.name);
+            if (comments.Count > 0)
+            {
+                ViewBag.show = true;
+            }
+            else
+            {
+                ViewBag.show = false;
+            }
+            if (bids.Count > 0)
+            {
+                ViewBag.hasBids = true;
+            }
+            else
+            {
+                ViewBag.hasBids = false;
+            }
+            dynamic model = new ExpandoObject();
+            model.property = sellPropertyModel;
+            model.comments = comments;
+            if (p.propertyDetail == PropertyDetail.Unsold)
+            {
+                model.bids = bids;
+            }
+            else
+            {
+                ViewBag.isSold = true;
+                var winner = _context.AuctionModel.FirstOrDefault(x => x.propname == sellPropertyModel.name);
+                ViewBag.winner = winner.custname;
+            }
+            return View(model);
         }
 
         // GET: SellPropertyModelController/Create
-        public ActionResult Create()
+        public IActionResult Create()
         {
             return View();
         }
@@ -55,58 +105,227 @@ namespace RealEstateWebProject.Controllers
         // POST: SellPropertyModelController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<IActionResult> Create(SellPropertyViewModel sellPropertyViewModel)
         {
-            try
+            string pathForPic = String.Empty;
+            if (ModelState.IsValid)
             {
+                var user = await _userManager.GetUserAsync(HttpContext.User);
+                string name = await _userManager.GetUserNameAsync(user);
+                if (sellPropertyViewModel.image != null)
+                {
+                    string uploadFolder = Path.Combine(_hostingEnvironment.WebRootPath, "Photos");
+                    pathForPic = Guid.NewGuid().ToString() + "_" + sellPropertyViewModel.image.FileName;
+                    string filePath = Path.Combine(uploadFolder, pathForPic);
+                    sellPropertyViewModel.image.CopyTo(new FileStream(filePath, FileMode.Create));
+                    SellPropertyModel r = new SellPropertyModel
+                    {
+                        name = sellPropertyViewModel.name,
+                        image = pathForPic,
+                        address = sellPropertyViewModel.address,
+                        description = sellPropertyViewModel.description,
+                        owner = name,
+                        startprice = sellPropertyViewModel.startprice,
+                        propertyType = sellPropertyViewModel.propertyType
+                    };
+                    _context.Add(r);
+
+                    PropertyModel p = new PropertyModel
+                    {
+                        address = r.address,
+                        description = r.description,
+                        image = r.image,
+                        name = r.name,
+                        owner = r.owner,
+                        price = r.startprice,
+                        propertyDetail = PropertyDetail.Unsold,
+                        propertyMode = PropertyMode.Sell,
+                        propertyStatus = PropertyStatus.Pending,
+                        propertyType = r.propertyType
+                    };
+                    _context.PropertyModel.Add(p);
+                }
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+            return View(sellPropertyViewModel);
         }
 
         // GET: SellPropertyModelController/Edit/5
-        public ActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int? id)
         {
-            return View();
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var sellPropertyModel = await _context.SellPropertyModel.FindAsync(id);
+            if (sellPropertyModel == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.path = sellPropertyModel.image;
+            SellPropertyViewModel sellPropertyViewModel = new SellPropertyViewModel
+            {
+                address = sellPropertyModel.address,
+                description = sellPropertyModel.description,
+                name = sellPropertyModel.name,
+                startprice = sellPropertyModel.startprice,
+                propertyType = sellPropertyModel.propertyType,
+                image = null
+            };
+            return View(sellPropertyViewModel);
         }
 
         // POST: SellPropertyModelController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<IActionResult> Edit(int id, SellPropertyViewModel sellPropertyViewModel)
         {
-            try
+            if (id != sellPropertyViewModel.id)
             {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    string uploadFolder = Path.Combine(_hostingEnvironment.WebRootPath, "Photos");
+                    var user = await _userManager.GetUserAsync(HttpContext.User);
+                    string name = await _userManager.GetUserNameAsync(user);
+                    string pathForPic = Guid.NewGuid().ToString() + "_" + sellPropertyViewModel.image.FileName;
+                    string filePath = Path.Combine(uploadFolder, pathForPic);
+                    sellPropertyViewModel.image.CopyTo(new FileStream(filePath, FileMode.Create));
+                    var s = _context.SellPropertyModel.FirstOrDefault(x => x.id == id);
+                    s.address = sellPropertyViewModel.address;
+                    s.description = sellPropertyViewModel.description;
+                    s.image = pathForPic;
+                    s.name = sellPropertyViewModel.name;
+                    s.owner = name;
+                    s.propertyType = sellPropertyViewModel.propertyType;
+                    s.startprice = sellPropertyViewModel.startprice;
+
+                    PropertyModel p = _context.PropertyModel.FirstOrDefault(x => x.name == s.name);
+                    p.address = s.address;
+                    p.description = s.description;
+                    p.image = s.image;
+                    p.name = s.name;
+                    p.owner = s.owner;
+                    p.price = s.startprice;
+                    p.propertyType = s.propertyType;
+
+                    _context.PropertyModel.Update(p);
+                    _context.SellPropertyModel.Update(s);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!SellPropertyModelExists(sellPropertyViewModel.id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-                return View();
-            }
+            return View(sellPropertyViewModel);
         }
 
         // GET: SellPropertyModelController/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int? id)
         {
-            return View();
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var sellPropertyModel = await _context.SellPropertyModel
+                .FirstOrDefaultAsync(m => m.id == id);
+            if (sellPropertyModel == null)
+            {
+                return NotFound();
+            }
+
+            return View(sellPropertyModel);
         }
 
         // POST: SellPropertyModelController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> Delete(int id)
         {
-            try
+            var sellPropertyModel = await _context.SellPropertyModel.FindAsync(id);
+            string file = sellPropertyModel.image;
+            string uploadFolder = Path.Combine(_hostingEnvironment.WebRootPath, "Photos");
+            string fileToDelete = Path.Combine(uploadFolder, file);
+            /*if (System.IO.File.Exists(fileToDelete))
             {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
+                System.IO.File.Delete(fileToDelete);                
+            }*/
+            _context.SellPropertyModel.Remove(sellPropertyModel);
+            var comments = _context.CommentModel.Where(x => x.propname == sellPropertyModel.name).ToList();
+            foreach (var comment in comments)
             {
-                return View();
+                _context.CommentModel.Remove(comment);
             }
+            var bids = _context.BidModel.Where(x => x.propname == sellPropertyModel.name).ToList();
+            foreach (var bid in bids)
+            {
+                _context.BidModel.Remove(bid);
+            }
+            var p = _context.PropertyModel.FirstOrDefault(x => x.name == sellPropertyModel.name);
+            _context.PropertyModel.Remove(p);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> Comments(int id, string comment)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.GetUserAsync(HttpContext.User);
+                string name = await _userManager.GetUserNameAsync(user);
+                var p = _context.SellPropertyModel.FirstOrDefault(x => x.id == id);
+                CommentModel commentModel = new CommentModel
+                {
+                    comment = comment,
+                    name = name,
+                    propname = p.name
+                };
+                _context.CommentModel.Add(commentModel);
+            }
+            await _context.SaveChangesAsync();
+            return Redirect("Details/" + id.ToString());
+        }
+        public async Task<IActionResult> Bid(int id, int bidId)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.GetUserAsync(HttpContext.User);
+                string name = await _userManager.GetUserNameAsync(user);
+                var prop = _context.SellPropertyModel.FirstOrDefault(x => x.id == id);
+                var property = _context.PropertyModel.FirstOrDefault(x => x.name == prop.name);
+                var bid = _context.BidModel.FirstOrDefault(x => x.id == bidId);
+                property.propertyDetail = PropertyDetail.Sold;
+                _context.Update(property);
+                AuctionModel a = new AuctionModel
+                {
+                    custname = bid.customername,
+                    propname = prop.name,
+                    bid = bidId
+                };
+                _context.AuctionModel.Add(a);
+            }
+            await _context.SaveChangesAsync();
+            return Redirect("Details/" + id.ToString());
+        }
+        private bool SellPropertyModelExists(int id)
+        {
+            return _context.SellPropertyModel.Any(e => e.id == id);
         }
     }
 }
