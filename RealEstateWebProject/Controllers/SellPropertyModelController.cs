@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using RealEstateWebProject.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +13,31 @@ namespace RealEstateWebProject.Controllers
 {
     public class SellPropertyModelController : Controller
     {
-        // GET: SellPropertyModelController
-        public ActionResult Index()
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IWebHostEnvironment _hostingEnvironment;
+
+        public SellPropertyModelController(ApplicationDbContext context, UserManager<IdentityUser> userManager, IWebHostEnvironment hostingEnvironment)
         {
-            return View();
+            _context = context;
+            _userManager = userManager;
+            _hostingEnvironment = hostingEnvironment;
+        }
+        // GET: SellPropertyModelController
+        public async Task<IActionResult> Index()
+        {
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            string name = await _userManager.GetUserNameAsync(user);
+            var models = await _context.SellPropertyModel.Where(x => x.owner == name).ToListAsync();
+            if (models.Count > 0)
+            {
+                ViewBag.empty = false;
+            }
+            else
+            {
+                ViewBag.empty = true;
+            }
+            return View(models);
         }
 
         // GET: SellPropertyModelController/Details/5
