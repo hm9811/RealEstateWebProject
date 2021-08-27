@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -12,7 +16,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.3.0/mdb.min.css"
           rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
 </head>
 <body>
     <header>
@@ -32,6 +36,51 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link text-dark dropdown-toggle"
+                               href="#"
+                               id="navbarDropdown"
+                               role="button"
+                               data-mdb-toggle="dropdown"
+                               aria-expanded="false">
+                                Browse Properties
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item text-dark" asp-action="Rent" asp-controller="Property">Browse Properties To Rent</a></li>
+                                <li><a class="dropdown-item text-dark" asp-action="Sell" asp-controller="Property">Browse Properties To Sell</a></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item text-dark" asp-action="Index" asp-controller="Property">Your Properties</a>
+                                </li>
+                            </ul>
+                        </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-action="Index" asp-controller="AgentModels" title="Agents">Manage Agents</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin") || User.IsInRole("Agent"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-action="Index" asp-controller="PropertyModels" title="Properties">Manage Properties</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin") || User.IsInRole("Seller"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-action="Index" asp-controller="RentPropertyModels" title="Agents">Manage Rent</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-action="Index" asp-controller="SellPropertyModel" title="Agents">Manage Sell</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Customer"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-action="Convert" asp-controller="Property" title="Agents">Register As Seller</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
