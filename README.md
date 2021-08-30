@@ -1,8 +1,8 @@
 
 # RealEstateWebProject
 Companion website for the CPW program. This site will
-shows what the admin sells. There will be section(Men, women, kids) to be separated
-for users convenience.
+demostrate the real estate website.
+it can be commented, put bid in, maintain users, and property.
 
 ## Coding Guidelines
 See [Guidelines](CodeGuidelines.md)
