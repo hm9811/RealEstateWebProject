@@ -69,6 +69,12 @@
                                 <a class="nav-link text-dark" asp-action="Index" asp-controller="SellPropertyModel" title="Agents">Manage Sell</a>
                             </li>
                         }
+                        @if (User.IsInRole("Customer") || User.IsInRole("Seller") || User.IsInRole("Agent") || User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-action="Index" asp-controller="BidModels" title="Agents">Bid List</a>
+                            </li>
+                        }
                         @if (User.IsInRole("Customer"))
                         {
                             <li class="nav-item">
