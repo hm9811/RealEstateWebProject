@@ -1,5 +1,3 @@
-# RealEstateWebProject
-[![.NET Core](https://github.com/hm9811/RealEstateWebProject/actions/workflows/dotnet.yml/badge.svg)](https://github.com/hm9811/RealEstateWebProject/actions/workflows/dotnet.yml)
 
 # RealEstateWebProject
 Companion website for the CPW program. This site will
